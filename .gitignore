@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.env
+*.egg-info/
+.venv/
+
+# Node
+node_modules/
+dist/
+.env.local
+
+# Claude Code workspace files
+.claude/
+
+# GCP — service account / credential JSON files
+# Covers: service-account*.json, *credentials*.json,
+# and GCP Console download format: project-name-hexhash.json
+*.json.key
+service-account*.json
+*credentials*.json
+*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*.json

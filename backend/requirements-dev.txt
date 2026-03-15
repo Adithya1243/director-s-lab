@@ -1,0 +1,5 @@
+# Test dependencies — install alongside requirements.txt
+# pip install -r requirements.txt -r requirements-dev.txt
+pytest==8.3.4
+pytest-asyncio==0.24.0
+# httpx is already in requirements.txt (needed for TestClient too)

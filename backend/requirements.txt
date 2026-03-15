@@ -1,0 +1,20 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.4
+python-dotenv==1.0.1
+
+# Google AI
+# google-cloud-aiplatform includes the vertexai module — do not add vertexai separately
+google-genai==1.5.0
+google-cloud-aiplatform==1.74.0
+
+# Google Cloud
+google-cloud-storage==2.19.0
+google-cloud-firestore==2.19.0
+
+# Async / HTTP
+httpx==0.28.1
+requests==2.32.3         # google.auth.transport.requests (Lyria + Veo REST auth)
+
+# Text-to-speech for character dialogue voiceover
+google-cloud-texttospeech==2.21.1

@@ -1,0 +1,16 @@
+# Never bake secrets or local state into the container image
+.env
+*.env
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+*.key
+# Exclude ALL JSON files from the build context.
+# Service account keys and GCP Console credential downloads must never
+# be baked into the container image — use ADC on Cloud Run instead.
+*.json

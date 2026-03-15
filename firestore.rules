@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Scenes — backend writes via service account; frontend reads only
+    match /scenes/{sceneId} {
+      allow read:  if true;   // TODO: lock down in production with auth
+      allow write: if false;  // Only backend service account may write
+    }
+  }
+}
