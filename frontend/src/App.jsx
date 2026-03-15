@@ -790,7 +790,7 @@ export default function App() {
                 panels={scene.panels}
                 onConfirm={handleConfirmRevision}
                 onCancel={handleCancelRevision}
-                isApplying={false}
+                isApplying={isRevising}
               />
             )}
 

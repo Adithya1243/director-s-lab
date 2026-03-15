@@ -545,24 +545,52 @@ async def _generate_video_bytes(video_prompt: str, panel_num: int, delay: float 
         return b""  # graceful fallback
 
 
+def _clean_dialogue(text: str) -> str:
+    """Strip stage directions, character prefixes, and formatting from dialogue."""
+    import re
+    if not text:
+        return ""
+    # Strip [CHARACTER NAME, stage direction] prefix
+    text = re.sub(r"^\[.*?\]\s*", "", text).strip()
+    # Strip "CharacterName:" or "CharacterName (note):" prefix
+    text = re.sub(r"^[A-Z][A-Za-z\s\-']+(\s*\(.*?\))?\s*:\s*", "", text).strip()
+    # Strip inline parenthetical stage directions like (softly) or (pauses)
+    text = re.sub(r"\(.*?\)", " ", text).strip()
+    # Strip asterisk emphasis *word*
+    text = re.sub(r"\*([^*]+)\*", r"\1", text).strip()
+    # Strip wrapping quotation marks
+    text = text.strip('"\'\u201c\u201d\u2018\u2019')
+    # Collapse multiple spaces
+    text = re.sub(r" {2,}", " ", text).strip()
+    return text
+
+
 async def _tts_bytes(dialogue: str, voice_gender: str = "female") -> bytes:
     """
     Convert character dialogue to speech using Gemini native TTS.
-    Selects voice by gender: female → Aoede (warm), male → Charon (resonant).
+    Selects expressive cinematic voices by gender:
+      female → Kore (expressive, emotive)
+      male   → Fenrir (expressive, resonant)
     Returns WAV bytes (24 kHz LINEAR16 mono), or empty bytes on failure.
     """
     import io
     import wave
-    import re
 
-    # Strip [CHARACTER, stage direction] prefix
-    clean = re.sub(r"^\[.*?\]\s*", "", dialogue or "").strip()
+    clean = _clean_dialogue(dialogue)
     if not clean or clean.upper() == "[SILENCE]":
         return b""
 
-    # Gender-appropriate cinematic voices
-    voice_name = "Charon" if voice_gender.lower() == "male" else "Aoede"
+    # Expressive cinematic voices — more natural than Charon/Aoede
+    voice_name = "Fenrir" if voice_gender.lower() == "male" else "Kore"
     logger.info("TTS: voice=%s gender=%s for: %s", voice_name, voice_gender, clean[:60])
+
+    # System instruction gives the TTS model acting direction
+    acting_style = (
+        "You are delivering a pivotal line of dialogue in a cinematic film. "
+        "Speak with genuine emotional depth and natural human pacing — "
+        "slight pauses, subtle breath, real weight behind each word. "
+        "Never sound robotic or flat. Match the emotional register of the line."
+    )
 
     try:
         response = await asyncio.wait_for(
@@ -570,6 +598,7 @@ async def _tts_bytes(dialogue: str, voice_gender: str = "female") -> bytes:
                 model="gemini-2.5-flash-preview-tts",
                 contents=clean[:500],
                 config=types.GenerateContentConfig(
+                    system_instruction=acting_style,
                     response_modalities=["AUDIO"],
                     speech_config=types.SpeechConfig(
                         voice_config=types.VoiceConfig(
@@ -674,14 +703,16 @@ async def _generate_video_with_audio(
 
             if has_ambient:
                 inputs += ["-i", ambient_path]
-                filter_parts.append(f"[{idx}:a]volume=0.40[amb]")
+                # Lower ambient under dialogue so voice punches through clearly
+                amb_vol = 0.18 if has_voice else 0.45
+                filter_parts.append(f"[{idx}:a]volume={amb_vol}[amb]")
                 mix_labels.append("[amb]")
                 idx += 1
 
             if has_voice:
                 inputs += ["-i", voice_path]
-                # TTS voice: 0.5 s lead-in, full volume (2.5× to punch through ambient)
-                filter_parts.append(f"[{idx}:a]adelay=500|500,volume=2.5[tts]")
+                # TTS voice: no delay (immediate impact), boosted volume
+                filter_parts.append(f"[{idx}:a]volume=4.0[tts]")
                 mix_labels.append("[tts]")
 
             if mix_labels:
